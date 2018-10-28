@@ -20,7 +20,8 @@ LIB_DIR		=	./libft/ ./printf/
 LFT			=	./libft/libft.a
 LPRINTF		=	./printf/libftprintf.a
 HEADER		=	./inc/lem_in.h
-SRC 		=   algorithm.c \
+SRC 		=   bonus_info.c \
+				algorithm.c \
 				read_links.c \
 				read_rooms.c \
 				main.c
@@ -69,6 +70,7 @@ clean:
 fclean: clean
 	@make fclean $(MK_LFT)
 	@make fclean $(MK_LPRINTF)
+	@rm -rf $(OBJ_DIR)
 	@rm -f $(NAME)
 	@echo ${TR}"[✗] "${TU}"$(NAME)"${EOC}
 

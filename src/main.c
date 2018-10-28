@@ -12,81 +12,28 @@
 
 #include "lem_in.h"
 
-static inline void	print_farm(t_data *d)
+static inline void	print_way(t_data *d, t_link *way)
 {
-	t_room	*room;
-	t_link	*link;
-
-	ft_printf("   \e[1m{BYEL}{TBLC} %d🐜 \n", d->🐜);
-	room = d->start;
-	while (room)
+	while (d->end->ant != d->🐜)
 	{
-		ft_printf("{TMAG}%s", room->name);
-		link = room->links;
-		while (link)
+		while (way->prev && way->room->ant != d->🐜)
 		{
-			if (link->room)
-				ft_printf("{TCYN}		%s\n", link->room->name);
-			link = link->next;
+			if (way->room->ant && way->next)
+				color_ant(++way->next->room->ant, way->next->room->name);
+			way = way->prev;
 		}
-		if (room->next)
-			ft_printf("{TYEL}-----------------\n");
-		room = room->next;
+		if (way->next->room->ant < d->🐜)
+			color_ant(++way->next->room->ant, way->next->room->name);
+		way = d->way_end;
+		ft_printf("\n");
 	}
-}
-
-static inline void	ft_error(t_data *d, int n)
-{
-	if (d->er == -1)
-		ft_printf("{TRED}ERROR(init): malloc\n");
-	else if (d->er == 1)
-		ft_printf("{TRED}ERROR(line[%d]): no line\n", n);
-	else if (d->er == 2)
-		ft_printf("{TRED}ERROR(line[%d]): nonvalid line or map structure\n", n);
-	else if (d->er == 3)
-		ft_printf("{TRED}ERROR(line[%d]): nonvalid number ants\n", n);
-	else if (d->er == 4)
-		ft_printf("{TRED}ERROR(line[%d]): nonvalid room\n", n);
-	else if (d->er == 5)
-		ft_printf("{TRED}ERROR(line[%d]): the specified room exists\n", n);
-	else if (d->er == 6)
-		ft_printf("{TRED}ERROR(line[%d]): the specified command exists\n", n);
-	else if (d->er == 7)
-		ft_printf("{TRED}ERROR: no command 'start' or/and 'end'\n");
-	else if (d->er == 8)
-		ft_printf("{TRED}ERROR(line[%d]): nonvalid link\n", n);
-	else if (d->er == 9)
-		ft_printf("{TRED}ERROR(line[%d]): a nonexistent link to the room\n", n);
-	else if (d->er == 10)
-		ft_printf("{TRED}ERROR(line[%d]): the specified link exists\n", n);
-}
-
-static inline void	init_data(t_data *d, char **line, int *num)
-{
-	ft_bzero(d, sizeof(t_data));
-	if (!(d->start = (t_room*)ft_memalloc(sizeof(t_room))) ||
-		!(d->start->links = (t_link*)ft_memalloc(sizeof(t_link))))
-	{
-		d->er = -1;
-		return ;
-	}
-	if (!(d->end = (t_room*)ft_memalloc(sizeof(t_room))) ||
-		!(d->end->links = (t_link*)ft_memalloc(sizeof(t_link))))
-	{
-		d->er = -1;
-		return ;
-	}
-	d->start->next = d->end;
-	d->output = ft_strnew(1);
-	*line = NULL;
-	*num = 0;
 }
 
 static inline void	read_line(t_data *d, char *line)
 {
 	if (!d->🐜 && *line != '#' && ft_isnumber(line, ft_strlen(line)))
 	{
-		if ((d->🐜 = ft_atoi(line)) <= 0)
+		if (ft_strlen(line) > 10 || (d->🐜 = ft_atoi(line)) <= 0)
 			d->er = 3;
 	}
 	else if (!ft_strcmp(line, "##start") && d->🐜 && !d->start->name &&
@@ -103,37 +50,91 @@ static inline void	read_line(t_data *d, char *line)
 		return ;
 	else if (ft_strchr(line, ' ') && d->🐜 && d->com != 5)
 		get_room(d, line);
-	else if (ft_strchr(line, '-') && d->🐜 && (d->com = 5))
-		get_link(d, line, -1);
+	else if (ft_strchr(line, '-') && d->🐜)
+		get_link(d, line, NULL, NULL);
 	else if (d->com != 5)
 		d->er = 2;
+	else
+		d->er = 8;
 }
 
-int					main(void)
+static inline void	init_data(t_data *d)
+{
+	ft_bzero(d, sizeof(t_data));
+	if (!(d->start = (t_room*)ft_memalloc(sizeof(t_room))) ||
+		!(d->start->links = (t_link*)ft_memalloc(sizeof(t_link))))
+	{
+		d->er = -1;
+		return ;
+	}
+	if (!(d->end = (t_room*)ft_memalloc(sizeof(t_room))) ||
+		!(d->end->links = (t_link*)ft_memalloc(sizeof(t_link))))
+	{
+		d->er = -1;
+		return ;
+	}
+	if (!(d->way_st = (t_link*)ft_memalloc(sizeof(t_link))))
+	{
+		d->er = -1;
+		return ;
+	}
+	d->way_end = d->way_st;
+	d->start->next = d->end;
+	d->output = ft_strnew(1);
+}
+
+static inline int	read_data(t_data *d, char *line, int n)
+{
+	int		ret;
+	char	*str;
+
+	while (!d->er && (ret = get_next_line(0, &line)) > 0)
+	{
+		read_line(d, line);
+		if (!d->er)
+		{
+			str = d->output;
+			d->output = ft_strjoin(str, line);
+			free(str);
+			str = d->output;
+			d->output = ft_strjoin(str, "\n");
+			free(str);
+		}
+		if (d->er == -2)
+			d->er = 0;
+		ft_strdel(&line);
+		++n;
+	}
+	if (!d->er && (ret == -1 || !d->🐜))
+		d->er = 1;
+	return (n);
+}
+
+int					main(int ac, char **av)
 {
 	t_data	d;
-	int		ret;
-	int		num;
-	char	*line;
+	int		n;
 
-	init_data(&d, &line, &num);
-	while ((ret = get_next_line(0, &line)) > 0 && !d.er)
-	{
-		d.output = ft_strjoin(d.output, line);
-		d.output = ft_strjoin(d.output, "\n");
-		read_line(&d, line);
-		ft_strdel(&line);
-		num++;
-	}
-	if (ret == -1 || !d.🐜)
-		d.er = 1;
-	if (d.er)
-		ft_error(&d, num);
+	init_data(&d);
+	if (ac > 1)
+		read_flag(&d, av[1]);
+	n = read_data(&d, NULL, 0);
+	if (d.com == 5)
+		src_way(&d, NULL, NULL, NULL);
+	if ((d.er && !d.end->dis) || !d.end->dis)
+		ft_error(&d, n);
 	else
 	{
 		ft_printf("%s\n", d.output);
-		print_farm(&d);
+		print_way(&d, d.way_end);
+		if (d.flg[0] == '\n')
+			ft_printf("%s", d.flg);
+		if (d.flg[0] != '\n' && ft_strchr(d.flg, 'w'))
+			ft_print_way(&d);
+		if (d.flg[0] != '\n' && ft_strchr(d.flg, 'f'))
+			ft_print_farm(&d);
 	}
-	ft_strdel(&d.output);
+	if (d.flg[0] != '\n' && ft_strchr(d.flg, 'l'))
+		system("echo && leaks -q lem-in");
 	return (0);
 }

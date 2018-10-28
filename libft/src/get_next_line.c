@@ -96,9 +96,13 @@ int					get_next_line(const int fd, char **line)
 	char			*buf;
 	static t_gnl	*lst = NULL;
 
+	buf = NULL;
 	if (!line || BUF_SIZE <= 0 || !(buf = ft_strnew(BUF_SIZE)) ||
 						read(fd, buf, 0) < 0)
+	{
+		ft_strdel(&buf);
 		return (-1);
+	}
 	if (!lst)
 		lst = crt_lst(fd);
 	if (!(f = src_lst(fd, lst)) || read_line(f, fd, buf) < 0)

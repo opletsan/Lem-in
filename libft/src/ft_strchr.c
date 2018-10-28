@@ -10,6 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "libft.h"
+
 char	*ft_strchr(const char *s, int c)
 {
 	while (*s)
@@ -23,5 +25,5 @@ char	*ft_strchr(const char *s, int c)
 	}
 	if (!*s && *s == (char)c)
 		return ((char*)s);
-	return (0);
+	return (NULL);
 }

@@ -16,6 +16,8 @@ t_room					*src_room(t_data *d, char *name)
 {
 	t_room	*room;
 
+	if (!name)
+		return (NULL);
 	room = d->start;
 	while (room)
 	{
@@ -26,7 +28,7 @@ t_room					*src_room(t_data *d, char *name)
 	return (NULL);
 }
 
-static inline t_room	*write_room(t_data *d, char *name)
+static inline void		write_room(t_data *d, char *name)
 {
 	t_room	*room;
 
@@ -36,13 +38,12 @@ static inline t_room	*write_room(t_data *d, char *name)
 	if (!(room->next = (t_room*)ft_memalloc(sizeof(t_room))))
 	{
 		d->er = -1;
-		return (NULL);
+		return ;
 	}
 	room = room->next;
 	room->name = name;
 	if (!(room->links = (t_link*)ft_memalloc(sizeof(t_link))))
 		d->er = -1;
-	return (room);
 }
 
 static inline char		*valid_roomname(char *line)
@@ -55,17 +56,20 @@ static inline char		*valid_roomname(char *line)
 	i = -1;
 	if (*line != 'L' && (tmp1 = ft_strchr(line, ' ')))
 	{
-		name = ft_strsub(line, 0, tmp1 - line);
+		if (!(name = ft_strsub(line, 0, tmp1 - line)))
+			return (NULL);
 		++tmp1;
 		while (name[++i])
 			if (name[i] == '-' || (name[i] >= 9 && name[i] <= 13))
+			{
+				free(name);
 				return (NULL);
-		if ((tmp2 = ft_strchr(tmp1, ' ')) && ft_isnumber(tmp1, tmp2 - tmp1))
-		{
-			++tmp2;
+			}
+		if ((tmp2 = ft_strchr(tmp1, ' ')) && ft_isnumber(tmp1, tmp2 - tmp1)
+																	&& ++tmp2)
 			if (ft_isnumber(tmp2, ft_strlen(tmp2)))
 				return (name);
-		}
+		free(name);
 	}
 	return (NULL);
 }
